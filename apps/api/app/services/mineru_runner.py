@@ -179,14 +179,25 @@ def mineru_process_env(repo_root: Path, hf_home: Path, xdg_cache: Path) -> dict[
     env["HF_HOME"] = str(hf_home)
     env["XDG_CACHE_HOME"] = str(xdg_cache)
     env.setdefault("PYTHONUNBUFFERED", "1")
-    # Subprocess inherits parent PATH (often npm/pnpm node paths). Prepend the venv bin dir
-    # for this interpreter so `mineru` installed next to `python` is always discoverable.
+    # Subprocess inherits npm/pnpm PATH; uvicorn may run with system Python while MinerU is
+    # installed in apps/api/.venv — always prepend that venv's bin/Scripts first, then this
+    # interpreter's bin (may differ from project venv).
+    prefixes: list[str] = []
+    venv_root = repo_root.resolve() / "apps" / "api" / ".venv"
+    for sub in ("bin", "Scripts"):
+        d = venv_root / sub
+        if d.is_dir():
+            prefixes.append(str(d))
+            break
+
     bindir = Path(sys.executable).resolve().parent
     if bindir.is_dir():
-        prefix = str(bindir)
-        path = env.get("PATH", "")
-        if not path.startswith(prefix):
-            env["PATH"] = f"{prefix}{os.pathsep}{path}"
+        s = str(bindir)
+        if s not in prefixes:
+            prefixes.append(s)
+
+    if prefixes:
+        env["PATH"] = os.pathsep.join(prefixes) + os.pathsep + env.get("PATH", "")
     return env
 
 

@@ -1,0 +1,14 @@
+{
+  "name": "mineru-local-monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"pnpm dev:web\" \"pnpm dev:api\"",
+    "dev:web": "cd apps/web && pnpm dev",
+    "dev:api": "cd apps/api && uvicorn app.main:app --reload --port 8000",
+    "setup:api": "cd apps/api && uv pip install -e .",
+    "setup:web": "cd apps/web && pnpm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

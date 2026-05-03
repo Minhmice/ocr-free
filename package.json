@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "run-p dev:web dev:api",
     "dev:web": "cd apps/web && npm run dev",
-    "dev:api": "cd apps/api && uvicorn app.main:app --reload --port 8000",
+    "dev:api": "cd apps/api && if [ -x .venv/bin/python ]; then .venv/bin/python -m uvicorn app.main:app --reload --port 8000; else python3 -m uvicorn app.main:app --reload --port 8000; fi",
     "setup:api": "cd apps/api && uv pip install -e .",
     "setup:web": "cd apps/web && npm install"
   },

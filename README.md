@@ -38,6 +38,8 @@ npm run setup:api
 You can use **pnpm** instead (`pnpm install`, `pnpm setup:web`) if you prefer.  
 `setup:api` runs `cd apps/api && uv pip install -e .` — install in the same environment where you installed MinerU so `mineru` is available to the API process. Alternatively, activate your MinerU venv first, then run `uv pip install -e apps/api` from the repo root.
 
+Creating **`apps/api/.venv`** (recommended) lets `npm run dev` start the API with **`.venv/bin/python -m uvicorn`** so you do not need `uvicorn` on your global `PATH`.
+
 ## 3. Run
 
 ```bash

@@ -49,6 +49,8 @@ The API is started with **`.venv/bin/python -m uvicorn`** so you do not need **`
 npm run dev
 ```
 
+`npm run dev` runs **`scripts/dev.mjs`**, which starts web + API in parallel and forwards **Ctrl+C (SIGINT)** to **both** processes so ports usually clear without manual `kill`.
+
 - **Web UI:** [http://localhost:3000](http://localhost:3000)  
 - **API:** [http://localhost:8000](http://localhost:8000) (proxied through Next.js route handlers at `/api/...`)
 

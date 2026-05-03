@@ -1,5 +1,6 @@
 import asyncio
 import os
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -10,7 +11,15 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def resolve_mineru_executable(env: dict[str, str]) -> str | None:
+    """Return absolute path to mineru if found on PATH under env."""
+    path = env.get("PATH", "")
+    exe = shutil.which("mineru", path=path)
+    return exe
+
+
 def build_mineru_cmd(
+    mineru_exe: str,
     input_path: Path,
     output_dir: Path,
     backend: str,
@@ -22,7 +31,7 @@ def build_mineru_cmd(
     force_ocr: bool,
 ) -> list[str]:
     cmd: list[str] = [
-        "mineru",
+        mineru_exe,
         "-p",
         str(input_path),
         "-o",
@@ -51,17 +60,33 @@ async def _drain_stream(
     *,
     is_stderr: bool,
 ) -> None:
+    """
+    Read in chunks so we are not blocked on readline() when MinerU omits newlines for long periods.
+    """
+
+    def emit_line(raw: bytes) -> None:
+        text = raw.replace(b"\r", b"").decode(errors="replace").strip()
+        if not text:
+            return
+        if is_stderr:
+            store.append_stderr(job_id, text)
+        else:
+            store.append_stdout(job_id, text)
+
     if stream is None:
         return
+    buf = bytearray()
     while True:
-        line_b = await stream.readline()
-        if not line_b:
+        chunk = await stream.read(65536)
+        if not chunk:
             break
-        line = line_b.decode(errors="replace").rstrip("\n\r")
-        if is_stderr:
-            store.append_stderr(job_id, line)
-        else:
-            store.append_stdout(job_id, line)
+        buf.extend(chunk)
+        while b"\n" in buf:
+            line, _, buf = buf.partition(b"\n")
+            emit_line(line)
+
+    if buf:
+        emit_line(bytes(buf))
 
 
 async def run_mineru_job(
@@ -70,50 +95,81 @@ async def run_mineru_job(
     cmd: list[str],
     env: dict[str, str],
 ) -> None:
-    store.patch(
-        job_id,
-        status="running",
-        progress_message="Starting MinerU…",
-        started_at=_utcnow(),
-    )
-
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-        env=env,
-    )
-
-    assert proc.stdout is not None
-    assert proc.stderr is not None
-    await asyncio.gather(
-        _drain_stream(proc.stdout, job_id, store, is_stderr=False),
-        _drain_stream(proc.stderr, job_id, store, is_stderr=True),
-    )
-    exit_code = await proc.wait()
-
     finished = _utcnow()
-    job = store.load(job_id)
-    stderr_tail = job.stderr_tail if job else []
 
-    if exit_code == 0:
+    try:
         store.patch(
             job_id,
-            status="succeeded",
-            progress_message="Finished",
-            finished_at=finished,
-            exit_code=exit_code,
-            error=None,
+            status="running",
+            progress_message="Starting MinerU…",
+            started_at=_utcnow(),
         )
-    else:
-        err_msg = "\n".join(stderr_tail[-20:]) if stderr_tail else f"Exit code {exit_code}"
+
+        proc = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            env=env,
+        )
+
+        assert proc.stdout is not None
+        assert proc.stderr is not None
+
+        await asyncio.gather(
+            _drain_stream(proc.stdout, job_id, store, is_stderr=False),
+            _drain_stream(proc.stderr, job_id, store, is_stderr=True),
+        )
+
+        exit_code = await proc.wait()
+        finished = _utcnow()
+        job = store.load(job_id)
+        stderr_tail = job.stderr_tail if job else []
+
+        if exit_code == 0:
+            store.patch(
+                job_id,
+                status="succeeded",
+                progress_message="Finished",
+                finished_at=finished,
+                exit_code=exit_code,
+                error=None,
+            )
+        else:
+            err_msg = "\n".join(stderr_tail[-20:]) if stderr_tail else f"Exit code {exit_code}"
+            store.patch(
+                job_id,
+                status="failed",
+                progress_message="MinerU failed",
+                finished_at=finished,
+                exit_code=exit_code,
+                error=err_msg[:8000],
+            )
+    except FileNotFoundError as e:
+        finished = _utcnow()
+        msg = (
+            f"Cannot start MinerU ({e}). Install MinerU in the same Python env as the API "
+            f"(e.g. `apps/api/.venv/bin/pip install -e packages/mineru[all]`) and ensure "
+            f"`mineru` is on PATH for that process. Current PATH begins with: "
+            f"{env.get('PATH', '')[:200]!r}…"
+        )
         store.patch(
             job_id,
             status="failed",
-            progress_message="MinerU failed",
+            progress_message="MinerU executable not found",
             finished_at=finished,
-            exit_code=exit_code,
-            error=err_msg[:8000],
+            exit_code=-1,
+            error=msg[:8000],
+        )
+    except Exception as e:  # noqa: BLE001 — surface any runner crash to the job record
+        finished = _utcnow()
+        msg = f"{type(e).__name__}: {e}"
+        store.patch(
+            job_id,
+            status="failed",
+            progress_message="MinerU runner error",
+            finished_at=finished,
+            exit_code=-1,
+            error=msg[:8000],
         )
 
 

@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "predev": "node scripts/ensure-api-venv.cjs && node scripts/check-api-port.cjs",
-    "dev": "run-p dev:web dev:api",
+    "dev": "node scripts/dev.mjs",
     "dev:web": "cd apps/web && npm run dev",
     "dev:api": "cd apps/api && if [ -x .venv/bin/python ]; then .venv/bin/python -m uvicorn app.main:app --reload --port ${API_PORT:-8000}; else python3 -m uvicorn app.main:app --reload --port ${API_PORT:-8000}; fi",
     "setup:api": "node scripts/ensure-api-venv.cjs",

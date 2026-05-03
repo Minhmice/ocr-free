@@ -9,6 +9,7 @@ from app.services.job_store import JobStore
 from app.services.mineru_runner import (
     build_mineru_cmd,
     mineru_process_env,
+    resolve_mineru_executable,
     spawn_mineru_task,
 )
 from app.services.safe_paths import new_job_id, sanitize_filename, validate_upload_extension
@@ -147,7 +148,10 @@ async def convert(
         options,
     )
 
+    env = mineru_process_env(settings.repo_root, settings.hf_home, settings.xdg_cache_home)
+    mineru_exe = resolve_mineru_executable(env) or "mineru"
     cmd = build_mineru_cmd(
+        mineru_exe,
         dest,
         output_dir,
         backend,
@@ -157,7 +161,6 @@ async def convert(
         enable_formula=enable_formula,
         force_ocr=force_ocr,
     )
-    env = mineru_process_env(settings.repo_root, settings.hf_home, settings.xdg_cache_home)
     spawn_mineru_task(job_id, store, cmd, env)
 
     return ConvertResponse(jobId=job_id)

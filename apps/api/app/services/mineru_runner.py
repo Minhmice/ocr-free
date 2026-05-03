@@ -1,6 +1,7 @@
 import asyncio
 import os
 import shutil
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -178,6 +179,14 @@ def mineru_process_env(repo_root: Path, hf_home: Path, xdg_cache: Path) -> dict[
     env["HF_HOME"] = str(hf_home)
     env["XDG_CACHE_HOME"] = str(xdg_cache)
     env.setdefault("PYTHONUNBUFFERED", "1")
+    # Subprocess inherits parent PATH (often npm/pnpm node paths). Prepend the venv bin dir
+    # for this interpreter so `mineru` installed next to `python` is always discoverable.
+    bindir = Path(sys.executable).resolve().parent
+    if bindir.is_dir():
+        prefix = str(bindir)
+        path = env.get("PATH", "")
+        if not path.startswith(prefix):
+            env["PATH"] = f"{prefix}{os.pathsep}{path}"
     return env
 
 

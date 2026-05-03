@@ -7,7 +7,7 @@ Next.js + FastAPI wrapper around the **MinerU CLI** (`mineru`) with file-based j
 - **Python 3.12** (recommended) or **3.13**. Python 3.14 may not have wheels for all dependencies yet; use 3.12 if installs fail.
 - [**uv**](https://docs.astral.sh/uv/) (recommended) or `pip` + `venv`
 - **Node.js** 20+
-- **pnpm** 9+
+- **npm** 10+ (or **pnpm** 9+ if you use it at the repo root)
 
 ## 1. Install MinerU from source (editable)
 
@@ -30,17 +30,18 @@ mineru --help
 From the **repository root**:
 
 ```bash
-pnpm install
-pnpm setup:web
-pnpm setup:api
+npm install
+npm run setup:web
+npm run setup:api
 ```
 
+You can use **pnpm** instead (`pnpm install`, `pnpm setup:web`) if you prefer.  
 `setup:api` runs `cd apps/api && uv pip install -e .` — install in the same environment where you installed MinerU so `mineru` is available to the API process. Alternatively, activate your MinerU venv first, then run `uv pip install -e apps/api` from the repo root.
 
 ## 3. Run
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
 - **Web UI:** [http://localhost:3000](http://localhost:3000)  
@@ -84,7 +85,7 @@ export NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 
 ### `mineru` command not found
 
-Install MinerU in the **same** Python environment that runs `uvicorn`, or activate that venv before `pnpm dev:api`. Ensure `which mineru` resolves when the shell that starts the API is the same one you use for MinerU.
+Install MinerU in the **same** Python environment that runs `uvicorn`, or activate that venv before `npm run dev:api`. Ensure `which mineru` resolves when the shell that starts the API is the same one you use for MinerU.
 
 ### Model download is slow
 
@@ -110,9 +111,11 @@ Backends like `vlm-auto-engine` or `hybrid-auto-engine` expect compatible driver
 
 | Script | Command |
 |--------|---------|
-| Both apps | `pnpm dev` |
-| Web only | `pnpm dev:web` |
-| API only | `pnpm dev:api` |
+| Both apps | `npm run dev` (or `pnpm dev`) |
+| Web only | `npm run dev:web` |
+| API only | `npm run dev:api` |
+
+Root dev uses **`npm-run-all2`** (`run-p`) so `npm install` at the repo root does not pull in `concurrently`’s heavy optional peer graph (which can trigger npm resolver bugs).
 
 ## License
 

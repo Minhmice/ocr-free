@@ -19,9 +19,10 @@ export function ResultTabs({ result, jobId }: Props) {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Preview");
 
   const downloadHref = useMemo(() => {
+    if (result?.downloadUrl) return result.downloadUrl;
     if (!jobId) return "#";
     return `/api/jobs/${jobId}/download`;
-  }, [jobId]);
+  }, [jobId, result?.downloadUrl]);
 
   if (!result) {
     return (

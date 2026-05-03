@@ -1,0 +1,16 @@
+node_modules
+.next
+dist
+__pycache__
+*.py[cod]
+.venv
+.python-version
+*.egg-info
+data/uploads/*
+data/outputs/*
+data/jobs/*
+data/models/*
+!data/uploads/.gitkeep
+!data/outputs/.gitkeep
+!data/jobs/.gitkeep
+!data/models/.gitkeep

@@ -1,3 +1,5 @@
+import type { OcrLanguageCode } from "./ocrLanguages";
+
 export type BackendName = "pipeline" | "vlm-auto-engine" | "hybrid-auto-engine";
 
 export type JobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled";
@@ -23,7 +25,7 @@ export interface ConvertResponse {
 export interface ConversionOptionsState {
   backend: BackendName;
   maxPages: string;
-  ocrLanguage: string;
+  ocrLanguage: OcrLanguageCode;
   enableTableRecognition: boolean;
   enableFormulaRecognition: boolean;
   forceOcr: boolean;

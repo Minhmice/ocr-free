@@ -40,6 +40,29 @@ def _parse_bool(raw: str | None, default: bool) -> bool:
 
 ALLOWED_BACKENDS = frozenset({"pipeline", "vlm-auto-engine", "hybrid-auto-engine"})
 
+# MinerU CLI `-l` choices (must stay in sync with apps/web/lib/ocrLanguages.ts)
+ALLOWED_OCR_LANG = frozenset(
+    {
+        "ch",
+        "ch_lite",
+        "ch_server",
+        "en",
+        "korean",
+        "japan",
+        "chinese_cht",
+        "ta",
+        "te",
+        "ka",
+        "th",
+        "el",
+        "latin",
+        "arabic",
+        "east_slavic",
+        "cyrillic",
+        "devanagari",
+    }
+)
+
 
 @router.post("/convert")
 async def convert(
@@ -56,6 +79,17 @@ async def convert(
         raise HTTPException(
             status_code=400,
             detail={"error": {"code": "INVALID_BACKEND", "message": f"Unknown backend: {backend}"}},
+        )
+
+    if ocrLanguage not in ALLOWED_OCR_LANG:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": {
+                    "code": "INVALID_OCR_LANGUAGE",
+                    "message": f"Unsupported OCR language: {ocrLanguage}",
+                }
+            },
         )
 
     filename = sanitize_filename(file.filename or "upload.bin")

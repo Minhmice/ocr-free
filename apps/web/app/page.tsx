@@ -7,12 +7,13 @@ import { JobStatusPanel } from "@/components/JobStatusPanel";
 import { ResultTabs } from "@/components/ResultTabs";
 import { UploadDropzone } from "@/components/UploadDropzone";
 import { convertFile, fetchJob, fetchJobs, fetchResult } from "@/lib/api";
+import { DEFAULT_OCR_LANGUAGE } from "@/lib/ocrLanguages";
 import type { ConversionOptionsState, JobState, ResultPayload } from "@/lib/types";
 
 const defaultOptions = (): ConversionOptionsState => ({
   backend: "pipeline",
   maxPages: "",
-  ocrLanguage: "ch",
+  ocrLanguage: DEFAULT_OCR_LANGUAGE,
   enableTableRecognition: true,
   enableFormulaRecognition: true,
   forceOcr: false,

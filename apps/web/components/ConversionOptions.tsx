@@ -1,5 +1,6 @@
 "use client";
 
+import { OCR_LANGUAGE_OPTIONS } from "@/lib/ocrLanguages";
 import type { ConversionOptionsState } from "@/lib/types";
 
 type Props = {
@@ -46,14 +47,24 @@ export function ConversionOptions({ value, onChange, disabled }: Props) {
       </label>
 
       <label className="block text-xs text-mineru-muted">
-        OCR language
-        <input
+        OCR language (MinerU{" "}
+        <code className="rounded bg-black/30 px-1">-l</code>)
+        <select
           disabled={disabled}
-          type="text"
           className="mt-1 w-full rounded-lg border border-mineru-border bg-mineru-bg px-3 py-2 text-sm"
           value={value.ocrLanguage}
-          onChange={(e) => set({ ocrLanguage: e.target.value })}
-        />
+          onChange={(e) =>
+            set({
+              ocrLanguage: e.target.value as ConversionOptionsState["ocrLanguage"],
+            })
+          }
+        >
+          {OCR_LANGUAGE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </label>
 
       <div className="flex flex-col gap-2 text-sm">

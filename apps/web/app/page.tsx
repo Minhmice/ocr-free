@@ -136,7 +136,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-2 md:items-stretch">
         <div className="space-y-4">
           <UploadDropzone
             file={file}
@@ -157,7 +157,7 @@ export default function HomePage() {
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="flex min-h-0 flex-col gap-4 md:min-h-[min(85vh,920px)]">
           <JobStatusPanel
             job={job}
             jobId={jobId}

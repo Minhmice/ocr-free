@@ -1,0 +1,126 @@
+name: Agent Benchmark
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  agent-benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Routing parity self-test (stdlib-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .cursor/agents/benchmarks/scripts/check_routing_parity.py --self-test
+
+      - name: Secrets hygiene scan (stdlib-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .cursor/agents/benchmarks/scripts/check_secrets_hygiene.py
+
+      - name: Shell script lint (optional)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v shellcheck >/dev/null 2>&1; then
+            shellcheck scripts/run_full_gate.sh
+          else
+            echo "shellcheck not installed; skipping"
+          fi
+
+      - name: Enforce routing keyword parity (rules.yaml ↔ predictor)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .cursor/agents/benchmarks/scripts/check_routing_parity.py
+
+      - name: Validate orchestrator trace harness fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .cursor/agents/benchmarks/scripts/validate_orchestrator_trace.py --input .cursor/agents/benchmarks/fixtures/orchestrator-trace/pass_frontend_low_risk.md --check-fixtures
+
+      - name: Run benchmark (validate → run → score w/ golden)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .cursor/agents/benchmarks/scripts/validate_cases.py
+          python .cursor/agents/benchmarks/scripts/run_benchmark.py
+          python .cursor/agents/benchmarks/scripts/score_benchmark.py --actual .cursor/agents/benchmarks/runs/latest/actual_results.jsonl --golden .cursor/agents/benchmarks/expected/golden_summary.json
+          echo "summary_scored.json: .cursor/agents/benchmarks/runs/latest/summary_scored.json"
+
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-benchmark-report
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            .cursor/agents/benchmarks/runs/latest/summary.json
+            .cursor/agents/benchmarks/runs/latest/summary_scored.json
+            .cursor/agents/benchmarks/reports/latest.md
+
+      - name: Benchmark summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import os
+          summary_path = Path(".cursor/agents/benchmarks/runs/latest/summary_scored.json")
+          golden_path = Path(".cursor/agents/benchmarks/expected/golden_summary.json")
+          run_name = "agent-benchmark-runs-latest"
+          artifact_note = f"Artifact name: {run_name} (contains .cursor/agents/benchmarks/runs/latest/**)"
+          def safe_int(x, default=0):
+            try:
+              return int(x)
+            except Exception:
+              return default
+          score_total = None
+          failures = None
+          cases_total = None
+          golden_result = "unknown"
+          if summary_path.exists():
+            data = json.loads(summary_path.read_text(encoding="utf-8"))
+            cases_total = safe_int(data.get("cases_total"))
+            score_total = safe_int(data.get("score_total"))
+            failures = len(data.get("failures") or [])
+          if golden_path.exists() and summary_path.exists():
+            g = json.loads(golden_path.read_text(encoding="utf-8"))
+            gs = safe_int(g.get("score_total"))
+            gf = safe_int(g.get("failures"))
+            if score_total is not None and failures is not None:
+              score_ok = (score_total >= gs - 5)
+              fail_ok = (failures <= gf)
+              golden_result = "PASS" if (score_ok and fail_ok) else "FAIL"
+          out = []
+          out.append("## Agent Benchmark")
+          if cases_total is not None:
+            out.append(f"- **cases_total**: {cases_total}")
+          if score_total is not None:
+            out.append(f"- **score_total**: {score_total}")
+          if failures is not None:
+            out.append(f"- **failures**: {failures}")
+          out.append(f"- **golden_comparison**: {golden_result}")
+          out.append(f"- **artifacts**: {artifact_note}")
+          out.append("")
+          step_summary = os.environ.get("GITHUB_STEP_SUMMARY")
+          if not step_summary:
+            raise SystemExit("GITHUB_STEP_SUMMARY not set")
+          Path(step_summary).write_text("\n".join(out) + "\n", encoding="utf-8")
+          PY
+

@@ -1,19 +1,20 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 def _find_repo_root() -> Path:
-    """apps/api/app/config.py -> repository root is parents[3]."""
+    """apps/api/app/config.py -> repo root is parents[2] (app → api → apps → repo)."""
     here = Path(__file__).resolve().parent
-    return here.parents[3]
+    return here.parents[2]
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="MINERU_API_", env_file=".env", extra="ignore")
 
-    repo_root: Path = Path(__file__).resolve().parents[3]
+    repo_root: Path = Field(default_factory=_find_repo_root)
     data_dir: Path | None = None
     max_upload_mb: int = 512
 
@@ -52,7 +53,6 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     s = Settings()
-    s.repo_root = _find_repo_root()
     if s.data_dir is None:
         s.data_dir = s.repo_root / "data"
     return s

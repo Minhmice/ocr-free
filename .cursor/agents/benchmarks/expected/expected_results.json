@@ -1,0 +1,387 @@
+{
+  "routing_basic_001": {
+    "task_type": "docs_only",
+    "primary_agent": "documentation-writer",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": [
+      "python .cursor/agents/scripts/validate_agent_system.py",
+      "python .cursor/agents/scripts/test_search_smoke.py"
+    ]
+  },
+  "routing_basic_002": {
+    "task_type": "implementation",
+    "primary_agent": "frontend-developer",
+    "secondary_agents": [],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "routing_basic_003": {
+    "task_type": "debugging",
+    "primary_agent": "debugger",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "routing_basic_004": {
+    "task_type": "research",
+    "primary_agent": "research-analyst",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "routing_basic_005": {
+    "task_type": "implementation",
+    "primary_agent": "typescript-specialist",
+    "secondary_agents": ["backend-developer"],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "routing_conflict_001": {
+    "task_type": "mixed_task",
+    "primary_agent": "orchestrator",
+    "secondary_agents": ["planner", "backend-developer", "frontend-developer"],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "routing_conflict_002": {
+    "task_type": "mixed_task",
+    "primary_agent": "orchestrator",
+    "secondary_agents": ["planner", "devops-engineer", "documentation-writer"],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "handoff_contract_001": {
+    "task_type": "docs_only",
+    "primary_agent": "documentation-writer",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": [
+      "python .cursor/agents/scripts/validate_agent_system.py",
+      "python .cursor/agents/scripts/test_search_smoke.py"
+    ]
+  },
+  "handoff_contract_002": {
+    "task_type": "architecture",
+    "primary_agent": "planner",
+    "secondary_agents": ["research-analyst"],
+    "quality_gates": [],
+    "validation_commands": [
+      "python .cursor/agents/scripts/validate_agent_system.py",
+      "python .cursor/agents/scripts/test_search_smoke.py"
+    ]
+  },
+  "handoff_contract_003": {
+    "task_type": "rule_ingestion",
+    "primary_agent": "rule-skill-ingestor",
+    "secondary_agents": ["database-specialist"],
+    "quality_gates": [],
+    "validation_commands": [
+      "python .cursor/agents/scripts/validate_agent_system.py",
+      "python .cursor/agents/scripts/test_search_smoke.py"
+    ]
+  },
+  "workflow_trace_001": {
+    "task_type": "implementation",
+    "primary_agent": "planner",
+    "secondary_agents": ["backend-developer", "frontend-developer"],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "workflow_trace_002": {
+    "task_type": "implementation",
+    "primary_agent": "database-specialist",
+    "secondary_agents": [],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "workflow_trace_003": {
+    "task_type": "validation_only",
+    "primary_agent": "qa-tester",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": ["python .cursor/agents/scripts/validate_agent_system.py"]
+  },
+  "workflow_trace_004": {
+    "task_type": "research",
+    "primary_agent": "research-analyst",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "failure_mutation_001": {
+    "task_type": "debugging",
+    "primary_agent": "debugger",
+    "secondary_agents": ["qa-tester"],
+    "quality_gates": [],
+    "validation_commands": [
+      "python .cursor/agents/scripts/test_search_smoke.py",
+      "python .cursor/agents/scripts/validate_agent_system.py"
+    ]
+  },
+  "failure_mutation_002": {
+    "task_type": "rule_ingestion",
+    "primary_agent": "rule-skill-ingestor",
+    "secondary_agents": ["qa-tester", "documentation-writer"],
+    "quality_gates": [],
+    "validation_commands": [
+      "python .cursor/agents/scripts/validate_agent_system.py",
+      "python .cursor/agents/scripts/test_search_smoke.py"
+    ]
+  },
+  "failure_mutation_003": {
+    "task_type": "validation_only",
+    "primary_agent": "qa-tester",
+    "secondary_agents": ["rule-skill-ingestor"],
+    "quality_gates": [],
+    "validation_commands": ["python .cursor/agents/scripts/validate_agent_system.py"]
+  },
+  "routing_docs_001": {
+    "task_type": "docs_only",
+    "primary_agent": "documentation-writer",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "routing_impl_001": {
+    "task_type": "implementation",
+    "primary_agent": "backend-developer",
+    "secondary_agents": [],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "routing_debug_001": {
+    "task_type": "debugging",
+    "primary_agent": "debugger",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "routing_mixed_001": {
+    "task_type": "mixed_task",
+    "primary_agent": "orchestrator",
+    "secondary_agents": [
+      "planner",
+      "backend-developer",
+      "documentation-writer",
+      "debugger"
+    ],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "handoff_docs_001": {
+    "task_type": "docs_only",
+    "primary_agent": "documentation-writer",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "handoff_rule_ingest_001": {
+    "task_type": "rule_ingestion",
+    "primary_agent": "rule-skill-ingestor",
+    "secondary_agents": ["documentation-writer"],
+    "quality_gates": [],
+    "validation_commands": [
+      "python .cursor/agents/scripts/validate_agent_system.py",
+      "python .cursor/agents/scripts/test_search_smoke.py"
+    ]
+  },
+  "workflow_impl_001": {
+    "task_type": "implementation",
+    "primary_agent": "backend-developer",
+    "secondary_agents": [],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "workflow_arch_001": {
+    "task_type": "architecture",
+    "primary_agent": "planner",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "failure_validation_001": {
+    "task_type": "validation_only",
+    "primary_agent": "qa-tester",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": ["python .cursor/agents/scripts/validate_agent_system.py"]
+  },
+  "failure_recovery_001": {
+    "task_type": "failure_recovery",
+    "primary_agent": "debugger",
+    "secondary_agents": ["qa-tester"],
+    "quality_gates": [],
+    "validation_commands": [
+      "python .cursor/agents/scripts/validate_agent_system.py",
+      "python .cursor/agents/scripts/test_search_smoke.py"
+    ]
+  },
+  "routing_basic_006": {
+    "task_type": "docs_only",
+    "primary_agent": "documentation-writer",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "routing_basic_007": {
+    "task_type": "docs_only",
+    "primary_agent": "documentation-writer",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "routing_basic_008": {
+    "task_type": "implementation",
+    "primary_agent": "backend-developer",
+    "secondary_agents": [],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "routing_basic_009": {
+    "task_type": "implementation",
+    "primary_agent": "devops-engineer",
+    "secondary_agents": ["qa-tester"],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "routing_basic_010": {
+    "task_type": "debugging",
+    "primary_agent": "debugger",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "routing_basic_011": {
+    "task_type": "architecture",
+    "primary_agent": "planner",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "routing_basic_012": {
+    "task_type": "research",
+    "primary_agent": "research-analyst",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "routing_basic_013": {
+    "task_type": "research",
+    "primary_agent": "research-analyst",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "routing_conflict_003": {
+    "task_type": "mixed_task",
+    "primary_agent": "orchestrator",
+    "secondary_agents": ["planner", "database-specialist", "typescript-specialist"],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "routing_conflict_004": {
+    "task_type": "mixed_task",
+    "primary_agent": "orchestrator",
+    "secondary_agents": ["planner", "documentation-writer", "devops-engineer"],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "handoff_contract_004": {
+    "task_type": "docs_only",
+    "primary_agent": "documentation-writer",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": ["python .cursor/agents/benchmarks/scripts/validate_cases.py"]
+  },
+  "handoff_contract_005": {
+    "task_type": "docs_only",
+    "primary_agent": "documentation-writer",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "handoff_contract_006": {
+    "task_type": "rule_ingestion",
+    "primary_agent": "rule-skill-ingestor",
+    "secondary_agents": ["planner"],
+    "quality_gates": [],
+    "validation_commands": [
+      "python .cursor/agents/scripts/validate_agent_system.py",
+      "python .cursor/agents/scripts/test_search_smoke.py"
+    ]
+  },
+  "handoff_contract_007": {
+    "task_type": "rule_ingestion",
+    "primary_agent": "rule-skill-ingestor",
+    "secondary_agents": ["documentation-writer"],
+    "quality_gates": [],
+    "validation_commands": ["python .cursor/agents/scripts/validate_agent_system.py"]
+  },
+  "handoff_contract_008": {
+    "task_type": "architecture",
+    "primary_agent": "planner",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "handoff_contract_009": {
+    "task_type": "research",
+    "primary_agent": "research-analyst",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "workflow_trace_005": {
+    "task_type": "implementation",
+    "primary_agent": "backend-developer",
+    "secondary_agents": [],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "workflow_trace_006": {
+    "task_type": "implementation",
+    "primary_agent": "frontend-developer",
+    "secondary_agents": [],
+    "quality_gates": ["code-reviewer", "qa-tester"],
+    "validation_commands": []
+  },
+  "workflow_trace_007": {
+    "task_type": "validation_only",
+    "primary_agent": "qa-tester",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": ["python .cursor/agents/benchmarks/scripts/validate_cases.py"]
+  },
+  "workflow_trace_008": {
+    "task_type": "validation_only",
+    "primary_agent": "qa-tester",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": ["python .cursor/agents/benchmarks/scripts/run_benchmark.py --dry-run"]
+  },
+  "workflow_ablation_001": {
+    "task_type": "architecture",
+    "primary_agent": "planner",
+    "secondary_agents": ["database-specialist"],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "workflow_ablation_002": {
+    "task_type": "research",
+    "primary_agent": "research-analyst",
+    "secondary_agents": [],
+    "quality_gates": [],
+    "validation_commands": []
+  },
+  "failure_mutation_004": {
+    "task_type": "rule_ingestion",
+    "primary_agent": "rule-skill-ingestor",
+    "secondary_agents": ["documentation-writer"],
+    "quality_gates": [],
+    "validation_commands": ["python .cursor/agents/scripts/validate_agent_system.py"],
+    "expected_exit_code": 1,
+    "expected_error_substrings": ["missing", "rule-map", "documentation-writer"],
+    "expected_validation_command": "python .cursor/agents/scripts/validate_agent_system.py"
+  }
+}

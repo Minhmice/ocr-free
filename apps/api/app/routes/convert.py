@@ -17,6 +17,17 @@ from app.services.safe_paths import new_job_id, sanitize_filename, validate_uplo
 router = APIRouter(prefix="/api", tags=["convert"])
 
 
+def _find_mineru_source_dir(repo_root: Path) -> Path | None:
+    """README layout packages/mineru, or legacy apps/api/packages/mineru."""
+    for d in (
+        repo_root / "packages" / "mineru",
+        repo_root / "apps" / "api" / "packages" / "mineru",
+    ):
+        if (d / "pyproject.toml").is_file() or (d / "setup.py").is_file():
+            return d
+    return None
+
+
 def _parse_optional_int(raw: str | None) -> int | None:
     if raw is None:
         return None
@@ -101,6 +112,30 @@ async def convert(
     enable_formula = _parse_bool(enableFormulaRecognition, True)
     force_ocr = _parse_bool(forceOcr, False)
 
+    env = mineru_process_env(settings.repo_root, settings.hf_home, settings.xdg_cache_home)
+    mineru_exe = resolve_mineru_executable(env)
+    if mineru_exe is None:
+        found_src = _find_mineru_source_dir(settings.repo_root)
+        if not found_src:
+            msg = (
+                "MinerU is not in this repository: expected packages/mineru (see README) "
+                "or apps/api/packages/mineru with pyproject.toml. Clone MinerU, then "
+                "pnpm setup:mineru or restart pnpm dev."
+            )
+        else:
+            try:
+                rel = found_src.relative_to(settings.repo_root).as_posix()
+            except ValueError:
+                rel = str(found_src)
+            msg = (
+                f"MinerU source exists at {rel} but the mineru CLI is not installed "
+                "in apps/api/.venv. From the repo root run: pnpm setup:mineru"
+            )
+        raise HTTPException(
+            status_code=503,
+            detail={"error": {"code": "MINERU_CLI_MISSING", "message": msg}},
+        )
+
     job_id = new_job_id()
     store = JobStore(settings.jobs_dir)
 
@@ -148,8 +183,6 @@ async def convert(
         options,
     )
 
-    env = mineru_process_env(settings.repo_root, settings.hf_home, settings.xdg_cache_home)
-    mineru_exe = resolve_mineru_executable(env) or "mineru"
     cmd = build_mineru_cmd(
         mineru_exe,
         dest,

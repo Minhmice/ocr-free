@@ -1,0 +1,33 @@
+{
+  "cases_total": 50,
+  "score_total": 100,
+  "failures": 0,
+  "by_layer": {
+    "A": {
+      "cases": 19,
+      "score_100": 1900,
+      "score_raw": 1520
+    },
+    "B": {
+      "cases": 11,
+      "score_100": 1100,
+      "score_raw": 110
+    },
+    "C": {
+      "cases": 10,
+      "score_100": 1000,
+      "score_raw": 10
+    },
+    "D": {
+      "cases": 6,
+      "score_100": 600,
+      "score_raw": 30
+    },
+    "E": {
+      "cases": 4,
+      "score_100": 400,
+      "score_raw": 320
+    }
+  },
+  "mutation_artifacts_required": true
+}

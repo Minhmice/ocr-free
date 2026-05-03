@@ -4,7 +4,7 @@ Next.js + FastAPI wrapper around the **MinerU CLI** (`mineru`) with file-based j
 
 ## Prerequisites
 
-- **Python 3.12** (recommended) or **3.13**. Python 3.14 may not have wheels for all dependencies yet; use 3.12 if installs fail.
+- **Python 3.12** (recommended) or **3.11 / 3.13**. **Do not use Python 3.14** for `apps/api` — `pydantic-core` does not build on 3.14 yet (PyO3). On macOS, `brew install python@3.12` and put `opt/python@3.12/bin` on your `PATH`, or rely on `scripts/ensure-api-venv.cjs` (runs before `npm run dev` / `npm start`) to find a 3.11–3.13 interpreter.
 - [**uv**](https://docs.astral.sh/uv/) (recommended) or `pip` + `venv`
 - **Node.js** 20+
 - **npm** 10+ (or **pnpm** 9+ if you use it at the repo root)
@@ -35,10 +35,13 @@ npm run setup:web
 npm run setup:api
 ```
 
-You can use **pnpm** instead (`pnpm install`, `pnpm setup:web`) if you prefer.  
-`setup:api` runs `cd apps/api && uv pip install -e .` — install in the same environment where you installed MinerU so `mineru` is available to the API process. Alternatively, activate your MinerU venv first, then run `uv pip install -e apps/api` from the repo root.
+You can use **pnpm** instead (`pnpm install`, `pnpm setup:web`) if you prefer.
 
-Creating **`apps/api/.venv`** (recommended) lets `npm run dev` start the API with **`.venv/bin/python -m uvicorn`** so you do not need `uvicorn` on your global `PATH`.
+**`npm run setup:api`** runs **`scripts/ensure-api-venv.cjs`**: it picks Python **3.11–3.13**, creates **`apps/api/.venv`** if needed, and runs **`pip install -e .`**. The same script runs automatically as **`predev`** and **`prestart`**, so a plain **`npm run dev`** prepares the API venv before starting servers.
+
+Install **MinerU** into that same environment (or a shared env) so the **`mineru`** CLI is available to the API — e.g. after `setup:api`, from the repo root: `apps/api/.venv/bin/pip install -e "packages/mineru[all]"` (adjust path if you cloned MinerU elsewhere), or follow MinerU’s docs.
+
+The API is started with **`.venv/bin/python -m uvicorn`** so you do not need **`uvicorn`** on your global `PATH`.
 
 ## 3. Run
 
@@ -113,11 +116,13 @@ Backends like `vlm-auto-engine` or `hybrid-auto-engine` expect compatible driver
 
 | Script | Command |
 |--------|---------|
-| Both apps | `npm run dev` (or `pnpm dev`) |
+| Both apps | `npm run dev` (or `pnpm dev`) — runs **`predev`** → ensures API venv |
 | Web only | `npm run dev:web` |
 | API only | `npm run dev:api` |
+| Production bundle | `npm run build` (Next.js in `apps/web` only) |
+| Production run | `npm start` — **`prestart`** ensures API venv, then web + API |
 
-Root dev uses **`npm-run-all2`** (`run-p`) so `npm install` at the repo root does not pull in `concurrently`’s heavy optional peer graph (which can trigger npm resolver bugs).
+Root dev uses **`npm-run-all2`** (`run-p`) instead of `concurrently` to avoid npm peer-resolution bugs.
 
 ## License
 

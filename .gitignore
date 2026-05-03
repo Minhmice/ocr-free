@@ -4,7 +4,6 @@ dist
 __pycache__
 *.py[cod]
 .venv
-.python-version
 *.egg-info
 data/uploads/*
 data/outputs/*

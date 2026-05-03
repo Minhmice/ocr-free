@@ -58,6 +58,8 @@ Optional: point the web app at a different API base (e.g. remote):
 export NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 ```
 
+**API port:** the dev API listens on **`API_PORT`** (default **8000**). The Next.js BFF must target the same origin; if you change the port, set **`NEXT_PUBLIC_API_BASE_URL`** to match (see [Troubleshooting](#port-8000-already-in-use-errno-48)).
+
 ## 4. Test flow
 
 1. Open the web UI.
@@ -87,6 +89,24 @@ export NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 | `MINERU_API_CORS_ORIGINS` | JSON list of allowed origins (default includes `http://localhost:3000`) |
 
 ## Troubleshooting
+
+### Port 8000 already in use (Errno 48)
+
+Another process (often a previous **`uvicorn`**) is bound to the API port. **`predev`** runs **`scripts/check-api-port.cjs`** and prints this early with fix hints.
+
+**Free the port (macOS / Linux):**
+
+```bash
+kill $(lsof -ti:8000)
+```
+
+**Or use a different port** (set both so the web app’s API proxy still works):
+
+```bash
+export API_PORT=8001
+export NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001
+pnpm dev
+```
 
 ### `mineru` command not found
 

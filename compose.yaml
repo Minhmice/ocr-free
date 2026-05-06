@@ -1,0 +1,54 @@
+name: ocr-free
+
+services:
+  # Default: browser-accessible WebUI on http://localhost:7860
+  mineru-gradio:
+    build:
+      context: .
+      dockerfile: mineru/docker/global/Dockerfile
+    image: mineru:local
+    container_name: mineru-gradio
+    restart: unless-stopped
+    ports:
+      - "7860:7860"
+    environment:
+      # Persist outputs to a bind-mounted directory.
+      MINERU_API_OUTPUT_ROOT: /output
+      MINERU_MODEL_SOURCE: local
+    volumes:
+      - ./output:/output
+    entrypoint: mineru-gradio
+    command:
+      - --server-name
+      - 0.0.0.0
+      - --server-port
+      - "7860"
+      # If you want Gradio to call a separate mineru-api container, set an API URL:
+      # - --api-url
+      # - http://mineru-api:8000
+
+  # Optional: standalone FastAPI on http://localhost:8000 (profile: api)
+  mineru-api:
+    build:
+      context: .
+      dockerfile: mineru/docker/global/Dockerfile
+    image: mineru:local
+    container_name: mineru-api
+    restart: unless-stopped
+    profiles: ["api"]
+    ports:
+      - "8000:8000"
+    environment:
+      MINERU_API_OUTPUT_ROOT: /output
+      MINERU_MODEL_SOURCE: local
+    volumes:
+      - ./output:/output
+    entrypoint: mineru-api
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      # --allow-public-http-client
+      # Disabled by default. Enabling this while binding to 0.0.0.0 turns the API
+      # into an externally-driven outbound request primitive (SSRF risk).

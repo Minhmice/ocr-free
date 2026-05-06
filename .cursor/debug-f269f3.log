@@ -1,1 +1,0 @@
-{"sessionId": "f269f3", "hypothesisId": "H1", "location": "convert.py:mineru_resolve", "message": "repo_root and mineru resolution", "data": {"repo_root": "/Users/minhmice/Documents/Projects/ocr-free", "path_first": "/Users/minhmice/Documents/Projects/ocr-free/apps/api/.venv/bin", "mineru_resolved": "mineru", "venv_bin_exists": true}, "timestamp": 1777805559600}

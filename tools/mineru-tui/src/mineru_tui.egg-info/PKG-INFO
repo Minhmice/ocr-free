@@ -1,0 +1,61 @@
+Metadata-Version: 2.4
+Name: mineru-tui
+Version: 0.1.0
+Summary: Textual TUI for local MinerU batch testing
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: textual>=0.47.0
+Requires-Dist: psutil>=5.9.0
+
+# MinerU Local Testing TUI
+
+Textual dashboard for batch-running the `mineru` CLI on files under an input directory, with host metrics and a persisted queue.
+
+## Install
+
+```bash
+pip install -e tools/mineru-tui
+```
+
+Dependencies: **textual**, **psutil** only. Optionally install **pypdf** if you want local PDF page totals in the queue (otherwise totals may show as `?` until logs report progress).
+
+## Run
+
+After install, the console script is:
+
+```bash
+mineru-tui
+```
+
+Or:
+
+```bash
+python -m mineru_tui
+```
+
+`mineru` must be on your `PATH`.
+
+## Defaults
+
+| Option | Default |
+|--------|---------|
+| `--input` | `~/data/mineru-input` |
+| `--output` | `~/data/mineru-output/tui-runs` |
+| `--backend` | `pipeline` |
+| `--max-pages` | `5` (`0` = full PDF; uses `mineru -s 0 -e …` when page count is unknown) |
+| `--concurrency` | `1` |
+| `--container` | none (also reads `MINERU_TUI_CONTAINER`) |
+| `--batch-mode` | `all pending` |
+
+## Queue
+
+- **Scan:** recursive under `--input`.
+- **Files:** `*.pdf`, common images, and `*.docx` / `*.pptx` / `*.xlsx` (MinerU-supported types).
+- **State:** `queue_state.json` at the output root (resumable). Older installs may migrate from `.mineru-tui/queue.json` once.
+
+## Helper scripts (repo root)
+
+- Windows: `.\scripts\run-mineru-tui.ps1`
+- macOS/Linux: `./scripts/run-mineru-tui.sh`
+
+These create **`.venv-mineru-tui` at the repo root**, install this package editable, and launch the TUI.

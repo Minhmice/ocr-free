@@ -1,0 +1,2 @@
+[console_scripts]
+mineru-tui = mineru_tui.cli:main

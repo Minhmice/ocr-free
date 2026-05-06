@@ -1,0 +1,15 @@
+README.md
+pyproject.toml
+src/mineru_tui/__init__.py
+src/mineru_tui/__main__.py
+src/mineru_tui/app.py
+src/mineru_tui/cli.py
+src/mineru_tui/metrics.py
+src/mineru_tui/orchestrator.py
+src/mineru_tui/state.py
+src/mineru_tui.egg-info/PKG-INFO
+src/mineru_tui.egg-info/SOURCES.txt
+src/mineru_tui.egg-info/dependency_links.txt
+src/mineru_tui.egg-info/entry_points.txt
+src/mineru_tui.egg-info/requires.txt
+src/mineru_tui.egg-info/top_level.txt

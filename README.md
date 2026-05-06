@@ -1,151 +1,188 @@
-# MinerU local document extraction
+# ocr-free — MinerU (PDF / Office / images → Markdown & JSON)
 
-Next.js + FastAPI wrapper around the **MinerU CLI** (`mineru`) with file-based jobs, SSE progress, and result inspection (Markdown, JSON, assets, ZIP download). Uploads, outputs, jobs, and model caches live under `data/` in the repository.
+This repository wraps **[MinerU](https://github.com/opendatalab/MinerU)** for local document parsing: **Gradio WebUI**, **FastAPI**, optional **Docker Compose**, and a small **terminal UI (TUI)** for batch CLI runs.
 
-## Prerequisites
+---
 
-- **Python 3.12** (recommended) or **3.11 / 3.13**. **Do not use Python 3.14** for `apps/api` — `pydantic-core` does not build on 3.14 yet (PyO3). On macOS, `brew install python@3.12` and put `opt/python@3.12/bin` on your `PATH`, or rely on `scripts/ensure-api-venv.cjs` (runs before `npm run dev` / `npm start`) to find a 3.11–3.13 interpreter.
-- [**uv**](https://docs.astral.sh/uv/) (recommended) or `pip` + `venv`
-- **Node.js** 20+
-- **npm** 10+ (or **pnpm** 9+ if you use it at the repo root)
+## Requirements (quick)
 
-## 1. Install MinerU from source (editable)
+- **Python 3.10–3.12** is the safe baseline everywhere (especially **Windows**).
+- **Python 3.13**: usable on many Linux/macOS setups for `mineru[core]`; on **Windows amd64** avoid dependency sets that pull **`lmdeploy` → `ray`** (see below).
+- **Docker Desktop** (optional) for the Compose path.
 
-```bash
-mkdir -p packages
-git clone https://github.com/opendatalab/MinerU.git packages/mineru
-cd packages/mineru
-uv pip install -e ".[all]"
-# or: pip install -e ".[all]"
+---
+
+## Windows: do **not** default to `mineru[all]`
+
+The upstream extra **`mineru[all]`** includes **`mineru[lmdeploy]` on Windows** (`mineru/pyproject.toml`). That pulls **`ray`**, which **does not ship wheels for Python 3.13 on `win_amd64`**, so installs fail or become fragile.
+
+**Recommended on Windows:**
+
+1. Use **Python 3.10–3.12** (e.g. from [python.org](https://www.python.org/downloads/) or `py -3.12`).
+2. Install **`mineru[core]`** (Gradio + pipeline/VLM stack) instead of `[all]` unless you know you need an extra backend.
+3. Prefer **`uv`** (or `pip`) in a **clean venv**.
+
+Example (PowerShell, from repo root):
+
+```powershell
+cd .\mineru
+py -3.12 -m venv ..\.venv-mineru
+..\.venv-mineru\Scripts\Activate.ps1
+python -m pip install -U pip uv
+uv pip install -e ".[core]"
 ```
 
-Confirm the CLI is on your `PATH`:
+Then `mineru`, `mineru-gradio`, and `mineru-api` should be on `PATH` inside that venv.
+
+---
+
+## Install paths (native)
+
+### Editable install from `mineru/`
 
 ```bash
-mineru --help
+cd mineru
+python -m pip install -U pip
+pip install uv
+uv pip install -e ".[core]"
 ```
 
-## 2. Install app dependencies
+Use **`".[all]"` only when you understand the extras** (platform-conditional `vllm` / `lmdeploy` / `mlx`).
 
-From the **repository root**:
+### Run Gradio WebUI
+
+Default: starts a local API if you omit `--api-url`.
 
 ```bash
-npm install
-npm run setup:web
-npm run setup:api
+mineru-gradio --server-name 0.0.0.0 --server-port 7860
 ```
 
-You can use **pnpm** instead (`pnpm install`, `pnpm setup:web`) if you prefer.
+- Browser: `http://127.0.0.1:7860`
+- LAN: use the host IP instead of `127.0.0.1` (see `docs/AGENT_PORT_FORWARDING.md`).
 
-**`npm run setup:api`** runs **`scripts/ensure-api-venv.cjs`**: it picks Python **3.11–3.13**, creates **`apps/api/.venv`** if needed, and runs **`pip install -e .`**. The same script runs automatically as **`predev`** and **`prestart`**, so a plain **`npm run dev`** prepares the API venv before starting servers.
-
-Install **MinerU** into that same environment (or a shared env) so the **`mineru`** CLI is available to the API — e.g. after `setup:api`, from the repo root: `apps/api/.venv/bin/pip install -e "packages/mineru[all]"` (adjust path if you cloned MinerU elsewhere), or follow MinerU’s docs.
-
-The API is started with **`.venv/bin/python -m uvicorn`** so you do not need **`uvicorn`** on your global `PATH`.
-
-## 3. Run
+### Run FastAPI
 
 ```bash
-npm run dev
+mineru-api --host 0.0.0.0 --port 8000
 ```
 
-`npm run dev` runs **`scripts/dev.mjs`**, which starts web + API in parallel and forwards **Ctrl+C (SIGINT)** to **both** processes so ports usually clear without manual `kill`.
+- OpenAPI: `http://127.0.0.1:8000/docs`
 
-- **Web UI:** [http://localhost:3000](http://localhost:3000)  
-- **API:** [http://localhost:8000](http://localhost:8000) (proxied through Next.js route handlers at `/api/...`)
+### Output directory
 
-Optional: point the web app at a different API base (e.g. remote):
+- Env: **`MINERU_API_OUTPUT_ROOT`** (default `./output` relative to the process working directory unless set).
+- In Docker, bind-mount a host folder and point `MINERU_API_OUTPUT_ROOT` at the in-container path (see Compose below).
+
+---
+
+## Docker Compose
+
+### Root `compose.yaml` (recommended)
+
+From **repository root**:
 
 ```bash
-export NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
+docker compose -f compose.yaml up --build
 ```
 
-**API port:** the dev API listens on **`API_PORT`** (default **8000**). The Next.js BFF must target the same origin; if you change the port, set **`NEXT_PUBLIC_API_BASE_URL`** to match (see [Troubleshooting](#port-8000-already-in-use-errno-48)).
+- **Gradio** container `mineru-gradio` → `http://127.0.0.1:7860`
+- **API** (optional profile):  
+  `docker compose -f compose.yaml --profile api up --build` → `http://127.0.0.1:8000`
 
-## 4. Test flow
-
-1. Open the web UI.
-2. Upload a PDF (or supported image / DOCX / PPTX / XLSX).
-3. Choose backend **`pipeline`** (default in UI; CPU-friendly).
-4. Click **Convert**.
-5. Watch status via SSE; when **succeeded**, review Preview / Markdown / JSON / Assets and use **Download ZIP**.
-
-## Project layout
-
-| Path | Purpose |
-|------|---------|
-| `apps/web` | Next.js App Router UI + BFF proxies under `app/api/*` |
-| `apps/api` | FastAPI app (`mineru` subprocess, job store, SSE, assets) |
-| `data/uploads` | Stored uploads per job |
-| `data/outputs` | MinerU output per job |
-| `data/jobs` | JSON job records (`{jobId}.json`) |
-| `data/models/huggingface` | `HF_HOME` for model downloads |
-| `data/models/cache` | `XDG_CACHE_HOME` |
-
-## Environment (API)
-
-| Variable | Description |
-|----------|-------------|
-| `MINERU_API_DATA_DIR` | Override `data/` directory (absolute path recommended) |
-| `MINERU_API_MAX_UPLOAD_MB` | Max upload size in MB (default `512`) |
-| `MINERU_API_CORS_ORIGINS` | JSON list of allowed origins (default includes `http://localhost:3000`) |
-
-## Troubleshooting
-
-### Port 8000 already in use (Errno 48)
-
-Another process (often a previous **`uvicorn`**) is bound to the API port. **`predev`** runs **`scripts/check-api-port.cjs`** and prints this early with fix hints.
-
-**Free the port (macOS / Linux):**
+Stop:
 
 ```bash
-kill $(lsof -ti:8000)
+docker compose -f compose.yaml down
 ```
 
-**Or use a different port** (set both so the web app’s API proxy still works):
+Services use image **`mineru:local`** built from `mineru/docker/global/Dockerfile`, bind-mount `./output` → `/output`, and set `MINERU_API_OUTPUT_ROOT=/output`.
+
+### Legacy upstream compose: `mineru/docker/compose.yaml`
+
+- Assumes an existing **`mineru:latest`** image (no `build:` stanza in that file).
+- Example:
 
 ```bash
-export API_PORT=8001
-export NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8001
-pnpm dev
+docker compose -f mineru/docker/compose.yaml --profile gradio up -d
+docker compose -f mineru/docker/compose.yaml --profile api up -d
 ```
 
-### `mineru` command not found
+Use **root `compose.yaml`** when you want a reproducible local build from this repo.
 
-Install MinerU in the **same** Python environment that runs `uvicorn`, or activate that venv before `npm run dev:api`. Ensure `which mineru` resolves when the shell that starts the API is the same one you use for MinerU.
+---
 
-### Model download is slow
+## Reverse proxy / CORS (FastAPI)
 
-First runs download models into `data/models/huggingface` and `data/models/cache`. Use a stable network; disk space must be sufficient.
+These are **implemented** in `mineru/mineru/cli/fast_api.py`:
 
-### No Markdown in results
+| Environment variable | Role |
+|----------------------|------|
+| `MINERU_API_ROOT_PATH` | `root_path` when served under a sub-path behind a proxy. |
+| `MINERU_API_CORS_ALLOW_ORIGINS` | Comma-separated list; if set, enables `CORSMiddleware`. |
+| `MINERU_API_TRUST_PROXY_HEADERS` | Enables Uvicorn `proxy_headers` + `forwarded_allow_ips` handling. |
+| `MINERU_API_FORWARDED_ALLOW_IPS` | Trusted IPs for forwarded headers (default `127.0.0.1`). |
 
-MinerU layout varies by version. This app picks the **first** `*.md` file under the job output directory. If none exist, Preview/Markdown may be empty — inspect `data/outputs/<jobId>/` and stderr in the UI.
+Enable **`MINERU_API_TRUST_PROXY_HEADERS` only behind a trusted reverse proxy** you control.
 
-### Permission errors under `data/`
+Gradio reads **`MINERU_API_TRUST_PROXY_HEADERS`** as well (`mineru/mineru/cli/gradio_app.py`) for spawned/local API scenarios.
 
-Ensure the user running the API can create and write `data/uploads`, `data/outputs`, `data/jobs`, and `data/models`.
+---
 
-### `pipeline` is slow
+## Batch terminal UI (`tools/mineru-tui`)
 
-The **pipeline** backend is CPU-oriented; large PDFs take time. Optionally try **VLM / hybrid** backends if you have a suitable GPU and MinerU docs for your hardware.
+Python **Textual** UI that:
 
-### VLM / hybrid backends need GPU or extra config
+- Recursively scans an **input** directory for PDFs, images, and office files.
+- Persists a resumable queue at **`<output>/.mineru-tui/queue.json`** (migrates legacy `<output>/queue_state.json` once).
+- Runs **`mineru -p … -o … -b …`** as subprocesses (default backend **`pipeline`**; override with `-b`).
+- Shows host metrics, Docker CPU for a named container (default **`mineru-gradio`**), queue counts, and a live log.
 
-Backends like `vlm-auto-engine` or `hybrid-auto-engine` expect compatible drivers and models. See [MinerU documentation](https://opendatalab.github.io/MinerU/) for backend-specific setup.
+### One-liners (install + run)
 
-## Development scripts
+**Windows (PowerShell)** — prefers `py -3.12` / `3.11` / `3.10` for the venv:
 
-| Script | Command |
-|--------|---------|
-| Both apps | `npm run dev` (or `pnpm dev`) — runs **`predev`** → ensures API venv |
-| Web only | `npm run dev:web` |
-| API only | `npm run dev:api` |
-| Production bundle | `npm run build` (Next.js in `apps/web` only) |
-| Production run | `npm start` — **`prestart`** ensures API venv, then web + API |
+```powershell
+Set-Location ~\Documents\projects\ocr-free; .\scripts\run-mineru-tui.ps1
+```
 
-Root dev uses **`npm-run-all2`** (`run-p`) instead of `concurrently` to avoid npm peer-resolution bugs.
+**macOS / Linux (bash)**:
 
-## License
+```bash
+cd ~/path/to/ocr-free && chmod +x scripts/run-mineru-tui.sh && ./scripts/run-mineru-tui.sh
+```
 
-Application code in this repository is provided as-is. MinerU is licensed under its own terms — see `packages/mineru` after clone.
+**Manual** (any OS, from repo root):
+
+```bash
+python3.12 -m venv .venv-mineru-tui
+.venv-mineru-tui/bin/python -m pip install -U pip
+.venv-mineru-tui/bin/python -m pip install -e ./tools/mineru-tui
+.venv-mineru-tui/bin/mineru-tui -i ./input -o ./output
+```
+
+CLI flags: `mineru-tui -h`. Useful env vars: `MINERU_TUI_INPUT_DIR`, `MINERU_TUI_OUTPUT_DIR`, `MINERU_TUI_BACKEND`, `MINERU_TUI_MAX_PAGES`, `MINERU_TUI_CONCURRENCY`, `MINERU_TUI_CONTAINER`.
+
+**PDF page cap:** `--max-pages N` maps to `mineru -s 0 -e …` when page count is known (`pypdf`). If the PDF page count cannot be read, the TUI falls back to `-e (N-1)` and may not match true length — see CLI help. **`--max-pages 0`** means full document (no `-s/-e`).
+
+---
+
+## Security note (SSRF)
+
+`mineru-api` supports **`--allow-public-http-client`**. Keep it **disabled** unless required: with public bind addresses, it can increase **SSRF** risk for `*-http-client` backends. See upstream docs and `docs/AGENT_PORT_FORWARDING.md`.
+
+---
+
+## Tiếng Việt (tóm tắt thao tác)
+
+- **Windows:** tránh mặc định `mineru[all]`; dùng **Python 3.10–3.12** + **`mineru[core]`** hoặc Docker.
+- **Chạy nhanh WebUI:** `mineru-gradio --server-name 0.0.0.0 --server-port 7860`
+- **Docker (khuyến nghị):** từ root repo: `docker compose -f compose.yaml up --build`
+- **TUI xử lý hàng loạt:** `.\scripts\run-mineru-tui.ps1` hoặc `./scripts/run-mineru-tui.sh`
+- **Mở cổng LAN / firewall:** xem `docs/AGENT_PORT_FORWARDING.md`
+
+---
+
+## Reference
+
+- Upstream usage: `mineru/docs/en/usage/quick_usage.md`
+- Port forwarding / proxies: `docs/AGENT_PORT_FORWARDING.md`
